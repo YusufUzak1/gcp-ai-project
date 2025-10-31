@@ -25,14 +25,8 @@ results_collection = db.collection('ai_results')
 storage_client = storage.Client()
 
 # -----------------------------------------------------------------
-# !!!!!!!!!!!!!!!!!!!!!  ÖNEMLİ - BURAYI DEĞİŞTİRİN !!!!!!!!!!!!!!!!!!!!!
-#
-# Adım 1.2'de oluşturduğunuz benzersiz kova (bucket) adını
-# (örn: "benim-devops-projem-12345-uploads") buraya yazın.
-#
-BUCKET_NAME = "BURAYA_KOVA_ADINIZI_YAZIN"
-#
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# BUCKET_NAME (Kova Adı) - SİZİN TARAFINIZDAN DOĞRU GÜNCELLENDİ
+BUCKET_NAME = "benim-devops-projem-12345-uploads"
 # -----------------------------------------------------------------
 
 
