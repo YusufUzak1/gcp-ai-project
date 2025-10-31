@@ -1,0 +1,111 @@
+# Bu workflow'un adı
+name: Deploy AI Vision App to Cloud Run
+
+# Tetikleyici: Sadece "main" dalına "push" yapıldığında çalışır
+on:
+  push:
+    branches:
+      - main
+
+# Ortam değişkenleri: Tüm adımlarda kullanılacak
+env:
+  # Sizin Proje ID'niz
+  PROJECT_ID: benim-devops-projem-12345
+  # Sizin Bölgeniz
+  REGION: europe-west10
+  # YENİ Artifact Registry depo adımız (Aşama 3'te oluşturduk)
+  REPO_NAME: ai-vision-repo
+  # YENİ Cloud Run servis adımız
+  SERVICE_NAME: ai-vision-service
+
+jobs:
+  deploy:
+    # Bu işin çalışacağı sanal makine
+    runs-on: ubuntu-latest
+
+    # İzinler: GitHub Actions'a WIF için OIDC token oluşturma izni verir
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      # 1. Adım: Kodu (GitHub deposunu) sanal makineye indir
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Adım: Google Cloud'da güvenli bir şekilde oturum aç (WIF)
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          # GitHub Secrets bilgileri (Aşama 5'te ekledik)
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      # 3. Adım: gcloud (Google Cloud CLI) aracını kur
+      - name: Setup Google Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      # 4. Adım: Docker'ı Artifact Registry'ye bağlanması için ayarla
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # 5. Adım: Dockerfile'dan imajı oluştur (Build)
+      - name: Build Docker Image
+        run: |-
+          docker build \
+            --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest \
+            .
+
+      # 6. Adım: Docker imajını Artifact Registry'ye it (Push)
+      - name: Push Docker Image
+        run: |-
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest
+
+      # 7. Adım: Docker imajını Cloud Run'a dağıt (Deploy)
+      # Bu adımda Storage ve Vision API'ye otomatik olarak bağlanacak (çünkü IAM izni verdik)
+      - name: Deploy to Cloud Run
+        run: |-
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
+```eof
+
+---
+
+### 🗺️ Aşama 7: Fırlatma (Son Push)!
+
+Tüm bu adımlar tamamlandığında, lokal klasörünüze geri dönün ve bu son `.github` klasörünü de GitHub'a gönderin.
+
+1.  Terminalinizi açın (`gcp_AI_projeckt` klasöründe):
+
+    ```bash
+    # 1. Yeni .github klasörünü ve yml dosyasını ekle
+    git add .
+    
+    # 2. Commit oluştur
+    git commit -m "CI/CD pipeline eklendi (Yapay Zeka Projesi)"
+    
+    # 3. GitHub'a gönder (push) - Bu, otomasyonu tetikleyecek!
+    git push origin main
+    ```
+
+---
+
+### 🚀 Aşama 8: Hata Ayıklama (Firestore İndeksi)
+
+`git push` komutu biter bitmez, GitHub deponuzdaki **"Actions"** sekmesine gidin ve otomasyonun çalışmasını izleyin.
+
+**ÇOK ÖNEMLİ:** Otomasyon (GitHub Actions) **yeşil tik (✓)** aldığında, sitenizi açmaya çalışırsanız **"Internal Server Error" (HTTP 500)** hatası alacaksınız.
+
+**Paniklemeyin!** Bu, "Fikir Panosu" projesinde yaşadığımız hatanın aynısıdır. `app.py` kodumuz, sonuçları `timestamp`'e (zaman damgası) göre sıralamaya (`order_by`) çalışıyor ve Firestore bunun için özel bir "indeks" (kural) oluşturmamızı istiyor.
+
+**Çözüm:**
+1.  Hata aldıktan sonra, Google Cloud'da **Cloud Run** -> `ai-vision-service` -> **"LOGS" (KAYITLAR)** sekmesine gidin.
+2.  Oradaki **kırmızı `Traceback...`** hatasını bulun.
+3.  Hata mesajının içindeki `FailedPrecondition...` ile başlayan satırı ve onun altındaki **"İndeks Oluşturma Linki"ni** (`https://console.cloud.google.com/firestore/indexes/composite/create?....`) bulun.
+4.  O linke tıklayın, açılan sayfada **"CREATE" (OLUŞTUR)** butonuna basın.
+5.  İndeksin oluşturulması (yaklaşık 2-5 dakika) bittikten sonra sitenizi (`.run.app` URL'si) yenileyin.
+
+İşte o zaman projeniz tam olarak çalışmaya başlayacaktır!
