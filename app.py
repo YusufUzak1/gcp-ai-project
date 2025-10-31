@@ -1,7 +1,7 @@
 import os
 import datetime
 import uuid # Resimlere benzersiz isimler vermek için
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash # 'flash' modülü eklendi
 
 # Google Cloud Servislerini içe aktar
 import firebase_admin
@@ -10,7 +10,6 @@ from google.cloud import storage
 from google.cloud import vision
 
 # --- Servis Bağlantıları ---
-
 # Cloud Run'da çalışırken, Google kimlik bilgilerini
 # otomatik olarak (Adım 1.4'te verdiğimiz izinlerle) alır.
 try:
@@ -24,8 +23,18 @@ results_collection = db.collection('ai_results')
 
 # 2. Cloud Storage (Resimleri yüklemek için)
 storage_client = storage.Client()
-# TODO: BURAYI DEĞİŞTİRİN! Adım 1.2'de oluşturduğunuz benzersiz kova adını yazın.
-BUCKET_NAME = "BURAYA_KOVA_ADINIZI_YAZIN" # Örn: "benim-devops-projem-12345-uploads"
+
+# -----------------------------------------------------------------
+# !!!!!!!!!!!!!!!!!!!!!  ÖNEMLİ - BURAYI DEĞİŞTİRİN !!!!!!!!!!!!!!!!!!!!!
+#
+# Adım 1.2'de oluşturduğunuz benzersiz kova (bucket) adını
+# (örn: "benim-devops-projem-12345-uploads") buraya yazın.
+#
+BUCKET_NAME = "BURAYA_KOVA_ADINIZI_YAZIN"
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# -----------------------------------------------------------------
+
 
 # 3. Cloud Vision (Yapay Zeka Analizi için)
 vision_client = vision.ImageAnnotatorClient()
@@ -87,12 +96,19 @@ def analyze():
 
     try:
         # 3. Dosyayı Cloud Storage'a Yükle
+        
+        # !! Hata ayıklama: Kova adının ayarlanıp ayarlanmadığını kontrol et !!
+        if BUCKET_NAME == "BURAYA_KOVA_ADINIZI_YAZIN":
+            flash("Kritik Hata: app.py dosyasında BUCKET_NAME ayarlanmamış!")
+            return redirect(url_for('index'))
+            
         bucket = storage_client.bucket(BUCKET_NAME)
         # Dosya adının çakışmaması için benzersiz bir isim oluştur (örn: 123e4567...jpg)
         unique_filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
         blob = bucket.blob(unique_filename)
         
         # Dosyayı yükle
+        file.seek(0) # Dosyayı başa sar (önemli)
         blob.upload_from_file(file.stream, content_type=file.content_type)
         
         # Resmin genel URL'sini al (Adım 1.3'te 'allUsers' izni verdiğimiz için çalışır)
