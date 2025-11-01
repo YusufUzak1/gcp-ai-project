@@ -1,4 +1,4 @@
-# .github/workflows/deploy.yml
+# .github/workflows/deploy.yml (SON SÜRÜM - CLOUD BUILD'E DEVREDİLDİ)
 name: Deploy to Cloud Run
 
 on:
@@ -12,11 +12,11 @@ permissions:
   id-token: 'write'
 
 env:
+  # PROJE BİLGİLERİ (Doğru olduğunu biliyoruz)
   PROJECT_ID: personal-ai-journal
   SERVICE_ID: personal-ai-journal
-  # BÖLGENİZ ARTIK KESİN:
-  REGION: europe-west3
-  
+  REGION: europe-west3             # Lütfen KENDİ BÖLGENİZİ kontrol edin ve gerekirse değiştirin.
+
 jobs:
   build-and-deploy:
     name: Build, Push, and Deploy
@@ -27,8 +27,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. Google Cloud'a Kimlik Doğrulama
-    # WIF bloğu doğru GCP bilgileri ile güncellendi.
+    # 1. Google Cloud'a Kimlik Doğrulama (WIF Başarılı Çalışıyor)
     - name: Authenticate Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -38,20 +37,15 @@ jobs:
         # HİZMET HESABI E-POSTASI
         service_account: personal-ai-journal-svc@personal-ai-journal.iam.gserviceaccount.com
 
-    # 2. Docker İmajını Oluşturma ve Artifact Registry'ye Gönderme
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+    # 2. DÜZELTME: Docker İmajını Oluşturma ve Artifact Registry'ye Gönderme (CLOUD BUILD KULLAN)
+    - name: Build and Push Docker Image using Cloud Build
+      uses: google-github-actions/cloudbuild-push@v1
+      with:
+        # Docker imajı etiketini Artifact Registry formatında tanımla
+        image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_ID }}/${{ env.SERVICE_ID }}:${{ github.sha }}
+        # Cloud Build'e Dockerfile'ı nerede bulacağını söyle
+        build-args: AR_REGION=${{ env.REGION }}
 
-    - name: Configure Docker to use Artifact Registry
-      run: gcloud auth configure-docker ${REGION}-docker.pkg.dev
-
-    - name: Build and Push Docker Image
-      run: |
-        gcloud auth configure-docker
-        IMAGE_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_ID}/${SERVICE_ID}:${{ github.sha }}
-        docker build -t $IMAGE_NAME .
-        docker push $IMAGE_NAME
-        echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
     # 3. Cloud Run'a Dağıtım
     - name: Deploy to Cloud Run
@@ -60,7 +54,8 @@ jobs:
       with:
         service: ${{ env.SERVICE_ID }}
         region: ${{ env.REGION }}
-        image: ${{ env.IMAGE_NAME }}
+        # İmaj yolunu Cloud Build tarafından oluşturulan imajı kullanacak şekilde ayarladık.
+        image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_ID }}/${{ env.SERVICE_ID }}:${{ github.sha }}
         
-        # DÜZELTİLMİŞ KISIM
+        # Bayraklar
         flags: '--allow-unauthenticated --port 8080'
