@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Giriş</h1>
+  <p>Basit demo amacıyla sadece e-posta / kullanıcı kimliği yeterlidir.</p>
+  <form method="post" class="card">
+    <label for="email">E-posta / Kullanıcı Kimliği</label>
+    <input type="text" id="email" name="email" placeholder="ornek@posta.com" required />
+    <button type="submit" class="btn primary">Giriş Yap</button>
+  </form>
+{% endblock %}
+
+

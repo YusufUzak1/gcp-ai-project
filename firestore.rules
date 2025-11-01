@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // YENİ KURAL: JOURNAL_ENTRIES KOLEKSİYONU İÇİN
+    match /journal_entries/{document} {
+      // Bir belgeyi okumaya (get/list) veya yazmaya (create/update/delete) izin ver.
+      // EĞER AŞAĞIDAKİ KOŞULLAR DOĞRUYSA:
+      allow read, write: if 
+        // 1. Kullanıcı Giriş Yapmışsa (request.auth boş değilse)
+        request.auth != null && 
+        
+        // 2. Belgeye erişen kullanıcının Firebase ID'si (request.auth.uid),
+        //    o belgenin içindeki 'userId' alanı ile EŞİTSE.
+        request.auth.uid == resource.data.userId;
+    }
+    
+    // DİĞER KOLEKSİYONLAR İÇİN VARSAYILAN KURAL
+    // Diğer tüm koleksiyonları kilitler.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

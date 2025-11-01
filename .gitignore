@@ -1,0 +1,25 @@
+# service_account.json dosyasını GİZLE
+# Bu, sizin GCP anahtarınızdır ve ASLA paylaşılmamalıdır.
+service_account.json
+
+# Sanal Ortam (Virtual Environment)
+# Bu klasör, 'pip install' ile kurduğunuz tüm kütüphaneleri içerir.
+# GitHub'a yüklenmemeli, 'requirements.txt' dosyasını yüklemek yeterlidir.
+venv/
+/venv/
+
+# Python cache dosyaları
+# Python'un hızı artırmak için oluşturduğu geçici dosyalardır.
+__pycache__/
+*.pyc
+
+# Hassas ayarları içeren ortam değişkeni dosyaları
+.env
+.flaskenv
+
+# VS Code ayarları
+.vscode/
+
+# Windows/Mac/Linux işletim sistemi dosyaları
+.DS_Store
+Thumbs.db

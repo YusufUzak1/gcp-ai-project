@@ -1,0 +1,22 @@
+:root { --gap: 12px; --primary: #4f46e5; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #f7f7fb; color: #222; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px; }
+.navbar { background: white; border-bottom: 1px solid #eee; }
+.navbar .brand { font-weight: 700; color: #111; text-decoration: none; }
+.navbar .spacer { flex: 1; }
+.navbar .container { display: flex; align-items: center; gap: var(--gap); }
+.btn { appearance: none; border: 1px solid #ccc; background: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+label { display: block; margin-bottom: 6px; font-weight: 600; }
+input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+.flash { list-style: none; padding: 0; margin: 0 0 16px; }
+.flash li { padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; }
+.flash .success { background: #ecfdf5; color: #065f46; }
+.flash .error { background: #fef2f2; color: #991b1b; }
+.entries { list-style: none; padding: 0; margin: 0; }
+.entries .meta { color: #666; font-size: 12px; margin-bottom: 8px; }
+.analysis { margin-top: 8px; font-size: 14px; color: #333; }
+
+

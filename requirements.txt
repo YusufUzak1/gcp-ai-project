@@ -1,0 +1,18 @@
+# requirements.txt
+
+# --- Çekirdek Web Çerçevesi ---
+Flask==3.0.3
+
+# --- GCP Servisleri ---
+google-cloud-firestore==2.16.0
+google-cloud-language==2.13.3
+firebase-admin==6.5.0
+
+# --- Üretim Sunucusu ---
+# Cloud Run, uygulamamızı çalıştırmak için 'flask run' yerine 
+# bu sunucuyu (Gunicorn) kullanır. Dockerfile dosyamız buna referans verecek.
+gunicorn==22.0.0
+
+# --- Çevre Değişkenleri (İsteğe bağlı ama önerilir) ---
+# .env dosyasından ayarları okumak için
+python-dotenv==1.0.1
