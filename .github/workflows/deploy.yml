@@ -12,11 +12,11 @@ permissions:
   id-token: 'write'
 
 env:
-  PROJECT_ID: personal-ai-journal  # Proje ID'si
+  PROJECT_ID: personal-ai-journal
   SERVICE_ID: personal-ai-journal
-  # Lütfen buraya Firestore'u kurarken seçtiğiniz bölgeyi yazın (Örn: europe-west3)
-  REGION: <KENDİ-BÖLGENİZ>             
-
+  # BÖLGENİZ ARTIK KESİN:
+  REGION: europe-west3
+  
 jobs:
   build-and-deploy:
     name: Build, Push, and Deploy
