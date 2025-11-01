@@ -1,51 +1,67 @@
-name: Build and Deploy to Cloud Run
+# .github/workflows/deploy.yml
+name: Deploy to Cloud Run
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - master # Kodu 'master' branch'ine her push yaptığınızda çalışır
+
+# WIF (Workload Identity Federation) izinleri
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+env:
+  # Lütfen buraya kendi GCP PROJE ID'nizi yazın (Örn: personal-ai-journal-12345)
+  PROJECT_ID: <KENDİ-PROJE-ID'NİZ> 
+  SERVICE_ID: personal-ai-journal
+  # Lütfen buraya Firestore'u kurarken seçtiğiniz bölgeyi yazın (Örn: europe-west3)
+  REGION: <KENDİ-BÖLGENİZ>             
 
 jobs:
   build-and-deploy:
+    name: Build, Push, and Deploy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    environment: production
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Set up gcloud auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.DEPLOYER_SA }}
+    # 1. Google Cloud'a Kimlik Doğrulama
+    - name: Authenticate Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        # Lütfen buraya KENDİ PROJE NUMARANIZI yazın. 
+        # (ID değil, numarasıdır. GCP Bilgi Paneli'nde bulunur)
+        workload_identity_provider: projects/<PROJECT_NUMARANIZ>/locations/global/workloadIdentityPools/github-ci-cd-pool/providers/github-provider
+        # Lütfen buraya KENDİ HİZMET HESABI E-POSTANIZI yazın.
+        # (Örn: personal-ai-journal-svc@<KENDİ-PROJE-ID'NİZ>.iam.gserviceaccount.com)
+        service_account: <HİZMET-HESABI-E-POSTANIZ>
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
+    # 2. Docker İmajını Oluşturma ve Artifact Registry'ye Gönderme
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker auth
-        run: gcloud auth configure-docker --quiet
+    - name: Configure Docker to use Artifact Registry
+      run: gcloud auth configure-docker ${REGION}-docker.pkg.dev
 
-      - name: Build
-        run: |
-          IMAGE=gcr.io/${{ secrets.GCP_PROJECT }}/personal-ai-journal:${{ github.sha }}
-          docker build -t $IMAGE .
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+    - name: Build and Push Docker Image
+      run: |
+        gcloud auth configure-docker
+        IMAGE_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_ID}/${SERVICE_ID}:${{ github.sha }}
+        docker build -t $IMAGE_NAME .
+        docker push $IMAGE_NAME
+        echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-      - name: Push
-        run: |
-          docker push $IMAGE
-
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy personal-ai-journal \
-            --project=${{ secrets.GCP_PROJECT }} \
-            --region=${{ secrets.GCP_REGION }} \
-            --image=$IMAGE \
-            --platform=managed \
-            --allow-unauthenticated \
-            --port=8080 \
-            --set-env-vars=FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }}
-
-
+    # 3. Cloud Run'a Dağıtım
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: ${{ env.SERVICE_ID }}
+        region: ${{ env.REGION }}
+        image: ${{ env.IMAGE_NAME }}
+        
+        # DÜZELTİLMİŞ KISIM: İki bayrak tek bir string içinde
+        flags: '--allow-unauthenticated --port 8080'
