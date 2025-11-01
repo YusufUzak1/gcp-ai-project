@@ -37,15 +37,18 @@ jobs:
         # HİZMET HESABI E-POSTASI
         service_account: personal-ai-journal-svc@personal-ai-journal.iam.gserviceaccount.com
 
-    # 2. DÜZELTME: Docker İmajını Oluşturma ve Artifact Registry'ye Gönderme (CLOUD BUILD KULLAN)
-    - name: Build and Push Docker Image using Cloud Build
-      uses: google-github-actions/cloudbuild-push@v1
-      with:
-        # Docker imajı etiketini Artifact Registry formatında tanımla
-        image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_ID }}/${{ env.SERVICE_ID }}:${{ github.sha }}
-        # Cloud Build'e Dockerfile'ı nerede bulacağını söyle
-        build-args: AR_REGION=${{ env.REGION }}
-
+    # 2. DÜZELTME: Docker İmajını Oluşturma ve Artifact Registry'ye Gönderme (CLOUD BUILD CLI İLE)
+    - name: Build and Push Docker Image
+      run: |
+        # GCP'de Cloud Build'i kullanarak Docker imajı oluştur ve Artifact Registry'ye gönder.
+        # Bu, Cloud Build'in kendi Service Agent'ını kullandığı için izin hatalarını bypass eder.
+        
+        IMAGE_NAME=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_ID }}/${{ env.SERVICE_ID }}:${{ github.sha }}
+        
+        # Cloud Build komutu: Gerekli imaj etiketini belirterek Dockerfile'ı build et ve push et.
+        gcloud builds submit --tag $IMAGE_NAME --region=${{ env.REGION }} .
+        
+        echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
     # 3. Cloud Run'a Dağıtım
     - name: Deploy to Cloud Run
